@@ -1,0 +1,64 @@
+COMP 321 Project 4: Unix Shell
+Yuqi Chen yc138 Zikang Chen zc45
+
+---(Do not write lines of text that exceed the width of this line.)------------
+
+TESTING STRATEGY
+1.Test the signal handlers indeed send SIGINT and SIGTSTP signals to the
+entire foreground process group. This is testing the branch
+if((pid = fgpid(jobs)) > 0) and kill(-pid, signum) in sigint_handler. 
+2.Test the SIGCHLD handler reap the zombie children successfully. This is
+used to test the while loop
+while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) in sigchld
+handler. 
+3.Test the parent blocks the SIGCHLD signals before it forks the child,
+and then unblock these signals after it adds the child to the job list by
+calling addjob. This is used to test the blocking and unblocking signals
+code, sigemptyset(&mask_one), sigaddset(&mask_one, SIGCHLD),
+sigprocmask(SIG_BLOCK, &mask_one, &prev_mask),
+sigprocmask(SIG_SETMASK, &prev_mask, NULL) in eval.
+4.Test the empty string is interpreted as the current directory being located
+in the search path. This is used to test the if branch
+if (pathstr_copy && (!pathstr_copy[0])), and path_array[argc++] = "."
+in initpath. 
+5.Test the case where there are two “:” characters in a row, or if the path
+starts or ends with the “:” character. The search path should be loaded
+when the program is initialized. This is used to test the while loop,
+while ((delim = strchr(pathstr_copy, ':'))) in initpath. 
+6.Test the path search process executes successfully. This is used to test
+the for loop, for (int i = 0; i < path_count; i++) in eval. 
+7.Test the case where the name of the command line is a built-in command.
+Examine whether tsh handles it immediately and wait for the next command line.
+This is used to test the if branch,
+if (strcmp(argv[0], "quit") == 0),
+else if (strcmp(argv[0], "fg") == 0 || strcmp(argv[0], "bg") == 0),
+else if (strcmp(argv[0], "jobs") == 0) in builtin_cmd. 
+8.Test the case where name of the command line is the name of an executable
+ﬁle contained in one of the directories in the search path. This is used to
+test the for loop, for (int i = 0; i < path_count; i++) in eval. 
+9.Test the case where the command line does not end with an &.
+In this case, the tsh should run the job in the foreground.
+10.Test the case where the command line ends with an &. In this case, the
+tsh should run the job in the background.
+11.Test the case when the path name or the executable file name is invalid.
+This is used to test the if branch, if((pid = fork()) == 0) in eval. 
+12.Test the case where the command is invalid. This is used to test the
+builtin_cmd processes invalid commands other than quit, fg, bg and job. 
+13.Test the case if we type ctrl-c or type ctrl-z. This is used to test
+the while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0), to
+see if it indeed terminates the child process in sigchld handler. 
+14.Test the case if we type quit. This is used to test
+if (strcmp(argv[0], "quit") == 0) in builtin_cmd. 
+15.Test the case if we type an empty command. This is used to test
+if(argv[0] == NULL) in eval. 
+16.Test the case when argv[0] contains a ‘\’. This is used to test
+if((pid = fork()) == 0) in eval since it is not a valid command. 
+17.Test the case when we type “bg”. This is used to test 
+if (argv[1] == NULL) in do_bgfg. 
+18.Test the case when we type “fg abc”. This is used to test
+if(isdigit(argv[1][0])) in do_bgfg since abc is not digit. 
+19.Test the case when we type “fg %100”. This is used to test the
+if branch if(argv[1][0] == '%') for the invalid job. 
+20.Test the case when we type “fg 100”. This is used to test the
+if branch if(argv[1][0] == '%').
+

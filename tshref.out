@@ -1,0 +1,121 @@
+./sdriver.pl -t trace01.txt -s ./tsh -a "-p"
+#
+# trace01.txt - Properly terminate on EOF.
+#
+./sdriver.pl -t trace02.txt -s ./tsh -a "-p"
+#
+# trace02.txt - Process builtin quit command.
+#
+./sdriver.pl -t trace03.txt -s ./tsh -a "-p"
+#
+# trace03.txt - Run a foreground job.
+#
+tsh> quit
+./sdriver.pl -t trace04.txt -s ./tsh -a "-p"
+#
+# trace04.txt - Run a background job.
+#
+tsh> ./myspin 1 \046
+[1] (26672) ./myspin 1 &
+./sdriver.pl -t trace05.txt -s ./tsh -a "-p"
+#
+# trace05.txt - Process jobs builtin command.
+#
+tsh> ./myspin 2 \046
+[1] (26676) ./myspin 2 &
+tsh> ./myspin 3 \046
+[2] (26678) ./myspin 3 &
+tsh> jobs
+[1] (26676) Running ./myspin 2 &
+[2] (26678) Running ./myspin 3 &
+./sdriver.pl -t trace06.txt -s ./tsh -a "-p"
+#
+# trace06.txt - Forward SIGINT to foreground job.
+#
+tsh> ./myspin 4
+Job [1] (26683) terminated by signal SIGINT
+./sdriver.pl -t trace07.txt -s ./tsh -a "-p"
+#
+# trace07.txt - Forward SIGINT only to foreground job.
+#
+tsh> ./myspin 4 \046
+[1] (26687) ./myspin 4 &
+tsh> ./myspin 5
+Job [2] (26689) terminated by signal SIGINT
+tsh> jobs
+[1] (26687) Running ./myspin 4 &
+./sdriver.pl -t trace08.txt -s ./tsh -a "-p"
+#
+# trace08.txt - Forward SIGTSTP only to foreground job.
+#
+tsh> ./myspin 4 \046
+[1] (26694) ./myspin 4 &
+tsh> ./myspin 5
+Job [2] (26696) stopped by signal SIGTSTP
+tsh> jobs
+[1] (26694) Running ./myspin 4 &
+[2] (26696) Stopped ./myspin 5 
+./sdriver.pl -t trace09.txt -s ./tsh -a "-p"
+#
+# trace09.txt - Process bg builtin command
+#
+tsh> ./myspin 4 \046
+[1] (26701) ./myspin 4 &
+tsh> ./myspin 5
+Job [2] (26703) stopped by signal SIGTSTP
+tsh> jobs
+[1] (26701) Running ./myspin 4 &
+[2] (26703) Stopped ./myspin 5 
+tsh> bg %2
+[2] (26703) ./myspin 5 
+tsh> jobs
+[1] (26701) Running ./myspin 4 &
+[2] (26703) Running ./myspin 5 
+./sdriver.pl -t trace10.txt -s ./tsh -a "-p"
+#
+# trace10.txt - Process fg builtin command. 
+#
+tsh> ./myspin 4 \046
+[1] (26712) ./myspin 4 &
+tsh> fg %1
+Job [1] (26712) stopped by signal SIGTSTP
+tsh> jobs
+[1] (26712) Stopped ./myspin 4 &
+tsh> fg %1
+tsh> jobs
+./sdriver.pl -t trace11.txt -s ./tsh -a "-p"
+#
+# trace11.txt - Forward SIGINT to every process in foreground process group
+#
+tsh> ./mysplit 4
+Job [1] (26720) terminated by signal SIGINT
+tsh> /bin/ps x
+  PID TTY      STAT   TIME COMMAND
+26659 pts/51   S+     0:00 make tshrefout
+26660 pts/51   S+     0:00 /bin/sh -c make tests > tshref.out 2>&1
+26661 pts/51   S+     0:00 make tests
+26717 pts/51   S+     0:00 /usr/bin/perl ./sdriver.pl -t trace11.txt -s ./tsh -a -p
+26718 pts/51   S+     0:00 ./tsh -p
+26725 pts/51   R      0:00 /bin/ps x
+42449 ?        S      0:00 sshd: alc@pts/51
+42450 pts/51   Ss     0:00 -tcsh
+./sdriver.pl -t trace12.txt -s ./tsh -a "-p"
+#
+# trace12.txt - Forward SIGTSTP to every process in foreground process group
+#
+tsh> ./mysplit 4
+Job [1] (26729) stopped by signal SIGTSTP
+tsh> jobs
+[1] (26729) Stopped ./mysplit 4 
+tsh> /bin/ps x
+  PID TTY      STAT   TIME COMMAND
+26659 pts/51   S+     0:00 make tshrefout
+26660 pts/51   S+     0:00 /bin/sh -c make tests > tshref.out 2>&1
+26661 pts/51   S+     0:00 make tests
+26726 pts/51   S+     0:00 /usr/bin/perl ./sdriver.pl -t trace12.txt -s ./tsh -a -p
+26727 pts/51   S+     0:00 ./tsh -p
+26729 pts/51   T      0:00 ./mysplit 4
+26730 pts/51   T      0:00 ./mysplit 4
+26733 pts/51   R      0:00 /bin/ps x
+42449 ?        S      0:00 sshd: alc@pts/51
+42450 pts/51   Ss     0:00 -tcsh
